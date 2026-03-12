@@ -1,56 +1,58 @@
-const apiUrl = 'http://localhost:3000/tasks';
+const apiUrl = 'http://127.0.0.1:3000/tasks';
 
-// 1. Load tasks automatically when the page opens
-window.onload = loadTasks;
+// Load tasks when the page loads
+document.addEventListener('DOMContentLoaded', fetchTasks);
 
-// 2. Fetch and Display Tasks (Combined function)
-async function loadTasks() {
+// Fetch tasks from the backend
+async function fetchTasks() {
     const response = await fetch(apiUrl);
     const tasks = await response.json();
-    
-    let listHTML = ''; // Build the HTML as a single string
-    
-    tasks.forEach(task => {
-        // Check if task is completed to add the CSS class
-        const statusClass = task.completed ? 'class="completed"' : '';
-        
-        listHTML += `
-            <li ${statusClass}>
-                <span onclick="toggleTask('${task._id}')" style="cursor:pointer; flex:1;">
-                    ${task.title}
-                </span>
-                <button class="delete-btn" onclick="deleteTask('${task._id}')">Delete</button>
-            </li>
-        `;
-    });
-    
-    // Inject all the built HTML at once
-    document.getElementById('taskList').innerHTML = listHTML;
+    renderTasks(tasks);
 }
 
-// 3. Add a new task
+// Render tasks to the screen
+function renderTasks(tasks) {
+    const taskList = document.getElementById('taskList');
+    taskList.innerHTML = ''; 
+
+    tasks.forEach(task => {
+        const li = document.createElement('li');
+        if (task.completed) li.classList.add('completed');
+
+        li.innerHTML = `
+            <span onclick="toggleTask('${task._id}')" style="cursor:pointer; flex:1;">
+                ${task.title}
+            </span>
+            <button class="delete-btn" onclick="deleteTask('${task._id}')">Delete</button>
+        `;
+        taskList.appendChild(li);
+    });
+}
+
+// Add a new task
 async function addTask() {
     const input = document.getElementById('taskInput');
-    if (!input.value) return; // Stop if the input is empty
+    const title = input.value.trim();
+    if (!title) return;
 
     await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: input.value })
+        body: JSON.stringify({ title })
     });
 
-    input.value = ''; // Clear the input box
-    loadTasks();      // Refresh the list immediately
+    input.value = '';
+    fetchTasks(); // Refresh the list
 }
 
-// 4. Toggle completion status
+// Toggle completion status
 async function toggleTask(id) {
     await fetch(`${apiUrl}/${id}`, { method: 'PUT' });
-    loadTasks();
+    fetchTasks();
 }
 
-// 5. Delete a task
+// Delete a task
 async function deleteTask(id) {
     await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
-    loadTasks();
+    fetchTasks();
 }
